@@ -456,6 +456,8 @@ defmodule GoogleApi.Storage.V1.Api.Objects do
       :body => :body
     }
 
+    content_type = Keyword.get(opts, :content_type, "text/plain")
+
     request =
       Request.new()
       |> Request.method(:post)
@@ -464,6 +466,8 @@ defmodule GoogleApi.Storage.V1.Api.Objects do
       })
       |> Request.add_optional_params(optional_params_config, optional_params)
       |> Request.library_version(@library_version)
+      |> Request.add_param(:header, "content-type", content_type)
+
 
     connection
     |> Connection.execute(request)
@@ -630,6 +634,13 @@ defmodule GoogleApi.Storage.V1.Api.Objects do
       :provisionalUserProject => :query,
       :userProject => :query
     }
+    
+    content_type = Keyword.get(opts, :content_type, "text/plain")
+
+    body =
+      Tesla.Multipart.new()
+      |> Tesla.Multipart.add_field(:metadata, Poison.encode!(metadata), headers: ["Content-Type": "application/json"])
+      |> Tesla.Multipart.add_file(data, name: :data, headers: ["Content-Type": content_type])
 
     request =
       Request.new()
@@ -638,8 +649,7 @@ defmodule GoogleApi.Storage.V1.Api.Objects do
         "bucket" => URI.encode(bucket, &URI.char_unreserved?/1)
       })
       |> Request.add_param(:query, :uploadType, upload_type)
-      |> Request.add_param(:body, :metadata, metadata)
-      |> Request.add_param(:file, :data, data)
+      |> Request.add_param(:body, :body, body)
       |> Request.add_optional_params(optional_params_config, optional_params)
       |> Request.library_version(@library_version)
 
